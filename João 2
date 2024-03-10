@@ -1,0 +1,240 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Passo de tempo
+h = 0.0001
+
+# Tempo final
+tf = 10
+
+# Valores iniciais para theta e dtheta
+theta0 = np.pi/2
+dtheta0 = 0
+
+# Frequência natural
+omegaN = 2.6
+
+# Coeficiente de amorteciemnto
+csi = 0.4
+
+# Do caso com forçamento
+# Omega é a frequência do forcamento
+# F é a força máxima
+omega = 2
+F = 10
+
+# Aproximação de theta = sin(theta) (True = sim, False = não)
+AT = False
+
+# Escolha a equação a ser resolvida
+# Equação 1: Com forçamento F
+# Equação 2: Sem forçamento F
+equacao = 1
+
+# Ômega é o mesmo que theta (True = sim, False = não)
+# Para a equação 1 apenas.
+# Isso foi apenas para brincadeira (não leve a sério)
+OIT = False
+
+# cor do gráfico
+cor = "red"
+
+# Pode-se plotar a mesma equação variando uma das constantes (omega, omegaN, csi ou F) num dado
+# intervalo. Nas especificações abaixo, é possível configurar tal plotagem
+# Plot unico ou plotar para um intervalo de uma variável
+plot_uni = False
+
+# A constante a ser variada (omega, omegaN, csi ou F)
+variavel = 'omegaN'
+
+# Valores que a constante vai assumir (max. de 7 valores)
+valores_da_var = [0.2, 0.6, 1.0, 1.4, 1.8, 2.2, 2.6]
+
+# Título do gráfico
+title = "θ vs t"
+
+# Subtítulo das abscisas
+labelx = "tempo [s]"
+
+# Subtítulo das ordenadas
+labely = "θ [rad]"
+
+
+################################## Inicio do programa ##################################
+#    Não fuce em nada que você não sabe o que significa! Criar isso foi trabalhoso!    #
+
+if AT == True:
+    termo_theta = lambda x: x
+
+if AT == False:
+    termo_theta = lambda x: np.sin(x)
+
+cores = ['red', 'blue', 'yellow', 'black', 'cyan', 'magenta', 'green'] # Total = 7
+
+tempos = []
+thetas = []
+dthetas = []
+
+def eq1_ODT(t, theta, dtheta, csi, omegaN, omega, F):
+    return (F*np.cos(omega*t) - 2*csi*omegaN*dtheta - omegaN**2*termo_theta(theta))
+
+def eq1_OIT(t, theta, dtheta, csi, omegaN, omega, F):
+    return (F*np.cos(dtheta*t) - 2*csi*omegaN*dtheta - omegaN**2*termo_theta(theta))
+
+def eq2(t, theta, dtheta, csi, omegaN, omega, F):
+    return (-omegaN**2*termo_theta(theta) - 2*csi*omegaN*dtheta)
+
+def ddt(t, theta, dtheta, csi, omegaN, omega, F):
+    return -(g/l)*np.sin(theta)
+    
+def dt(t, theta, dtheta, csi, omegaN, omega, F):
+    return dtheta
+    
+def DELTA_rk4(f, t, theta, dtheta, csi, omegaN, omega, F):
+    global h
+    
+    k1 = f(t, theta, dtheta, csi, omegaN, omega, F)
+    k2 = f(t + h/2, theta + h/2*k1, dtheta + h/2*k1, csi, omegaN, omega, F)
+    k3 = f(t + h/2, theta + h/2*k2, dtheta + h/2*k2, csi, omegaN, omega, F)
+    k4 = f(t + h, theta + h*k3, dtheta + h*k3, csi, omegaN, omega, F)
+    
+    return h/6*(k1 + 2*k2 + 2*k3 + k4)
+    
+def main(csi, omegaN, omega, F, cor):
+    global theta0, dtheta0, labelx, labely, titulo
+    
+    t = 0
+    
+    theta = theta0
+    dtheta = dtheta0
+    
+    if equacao == 1 and OIT == True:        
+        while t <= tf:
+            tempos.append(t)
+            thetas.append(theta)
+            dthetas.append(dtheta)
+            
+            theta_old = theta
+            dtheta_old = dtheta
+            
+            theta += DELTA_rk4(dt, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            dtheta += DELTA_rk4(eq1_OIT, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            
+            t += h
+            
+    if equacao == 1 and OIT == False:        
+        while t <= tf:
+            tempos.append(t)
+            thetas.append(theta)
+            dthetas.append(dtheta)
+            
+            theta_old = theta
+            dtheta_old = dtheta
+            
+            theta += DELTA_rk4(dt, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            dtheta += DELTA_rk4(eq1_ODT, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            
+            t += h
+    
+    if equacao == 2:
+        while t <= tf:
+            tempos.append(t)
+            thetas.append(theta)
+            dthetas.append(dtheta)
+            
+            theta_old = theta
+            dtheta_old = dtheta
+            
+            theta += DELTA_rk4(dt, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            dtheta += DELTA_rk4(eq2, t, theta_old, dtheta_old, csi, omegaN, omega, F)
+            
+            t += h
+
+    plt.plot(tempos, thetas, color=cor)
+        
+def plot_unico(csi, omegaN, omega, F, cor):
+    main(csi, omegaN, omega, F, cor)
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.title(title)
+    plt.xticks(tempos[0::int(1/h)])
+    plt.yticks([min(thetas), max(thetas), 0, min(thetas) - 1, max(thetas) + 1])
+    plt.axis([0, None, min(thetas) - 1 , max(thetas) + 1])
+    plt.show()
+    
+    return
+
+def itera(csi, omegaN, omega, F):
+    global variavel, valores_da_var, cores, tf, h, tempos
+    variaveis = {'csi' : 0, 
+                 'omegaN' : 1, 
+                 'omega' : 2, 
+                 'F' : 3}
+    
+    var3 = variaveis[variavel]
+    
+    minimos_theta = []
+    maximos_theta = []
+    minimos_dtheta = []
+    maximos_dtheta = []
+    
+    numero_de_iteracoes = len(valores_da_var)
+     
+    if numero_de_iteracoes > 7:
+        print("Erro: A lista de valores a serem iterados na variável" + variavel + "excedem o numero máximo de 7 valores.")
+        return
+    
+    i = 0
+    
+    graficos = []
+    
+    simbolos = {
+        'omega' : 'ω',
+        'csi' : 'ξ', 
+        'F' : 'F',
+        'omegaN' : 'ωₙ'
+    }
+    
+    while i < numero_de_iteracoes:
+        print(f"{i}ª iteração da variável {variavel}: valor de {variavel} = {valores_da_var[i]}")
+        
+        tempos.clear()
+        thetas.clear()
+        dthetas.clear()
+        
+        if var3 == 0:
+            main(valores_da_var[i], omegaN, omega, F, cores[i])
+            
+        if var3 == 1:
+            main(csi, valores_da_var[i], omega, F, cores[i])
+            
+        if var3 == 2:
+            main(csi, omegaN, valores_da_var[i], F, cores[i])
+        
+        if var3 == 3:
+            main(csi, omegaN, omega, valores_da_var[i], cores[i])
+
+        minimos_theta.append(min(thetas))
+        minimos_dtheta.append(min(dthetas))
+        
+        maximos_theta.append(max(thetas))
+        maximos_dtheta.append(max(dthetas))
+        
+        i+=1
+    
+    legendas = list(map(lambda y: simbolos[variavel] + ' = ' + str(y), valores_da_var))  
+    
+    plt.legend(legendas)
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.title(title)
+    plt.xticks(tempos[::int(1/h)])
+    plt.yticks([min(minimos_theta), max(maximos_theta), 0, min(minimos_theta) - 1, max(maximos_theta) + 1])
+    plt.axis([0, None, min(minimos_theta) - 1 , max(maximos_theta) + 1])
+    plt.show()
+    
+if plot_uni == True:
+    plot_unico(csi, omegaN, omega, F, cor)
+    
+if plot_uni == False:
+    itera(csi, omegaN, omega, F)
