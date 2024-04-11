@@ -1,0 +1,92 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parâmetros
+m = 1.0  # Massa do pêndulo (kg)
+L = 2.0  # Comprimento do pêndulo (m)
+g = 9.81  # Aceleração devida à gravidade (m/s^2)
+k = 1.0  # Constante elástica da mola (N/m)
+theta0 = np.pi / 2  # Ângulo inicial (rad)
+omega0 = 0.0  # Velocidade angular inicial (rad/s)
+x0 = 0.2  # Deformação inicial da mola (m)
+t0 = 0.0  # Tempo inicial (s)
+tf = 20.0  # Tempo final (s)
+dt = 0.0001  # Passo de tempo (s)
+
+# Função que retorna a derivada de theta e omega
+def derivadas(t, y):
+    theta, omega, x = y
+    dtheta_dt = omega
+    domega_dt = (-(g/L) * np.sin(theta) - (k/m) * x)  # Equação diferencial para omega
+    dx_dt = 0  # Supondo que a deformação da mola não muda com o tempo
+    return [dtheta_dt, domega_dt, dx_dt]
+
+# Método de Runge-Kutta de quarta ordem
+def runge_kutta4(t, y, h, derivadas):
+    k1 = h * np.array(derivadas(t, y))
+    k2 = h * np.array(derivadas(t + 0.5 * h, y + 0.5 * k1))
+    k3 = h * np.array(derivadas(t + 0.5 * h, y + 0.5 * k2))
+    k4 = h * np.array(derivadas(t + h, y + k3))
+    return y + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+
+# Arrays para armazenar os resultados
+t_lista = np.arange(t0, tf, dt)
+theta_lista = []
+omega_lista = []
+x_lista = []
+
+# Condições iniciais
+y = [theta0, omega0, x0]
+
+# Resolvendo a equação diferencial usando o método de Runge-Kutta
+for t in t_lista:
+    theta_lista.append(y[0])
+    omega_lista.append(y[1])
+    x_lista.append(y[2])
+    y = runge_kutta4(t, y, dt, derivadas)
+# Arrays para armazenar as coordenadas (x, y) da extremidade do pêndulo
+x_pendulo = L * np.sin(theta_lista)
+y_pendulo = -L * np.cos(theta_lista)
+
+# Plotando o comportamento do pêndulo
+plt.figure(figsize=(10, 6))
+plt.plot(t_lista, x_pendulo, label='Comportamento do pêndulo')
+plt.xlabel('Tempo (s)')
+plt.ylabel('Posição horizontal (m)')
+plt.title('Comportamento do Pêndulo')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plotando a órbita do pêndulo
+plt.figure(figsize=(6, 6))
+plt.plot(x_pendulo, y_pendulo, label='Órbita do pêndulo')
+plt.xlabel('Posição horizontal (m)')
+plt.ylabel('Posição vertical (m)')
+plt.title('Órbita do Pêndulo')
+plt.gca().set_aspect('equal', adjustable='box')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plotando o gráfico de fase do pêndulo
+plt.figure(figsize=(10, 6))
+plt.plot(theta_lista, omega_lista, label='Gráfico de fase do pêndulo')
+plt.xlabel('Ângulo (theta)')
+plt.ylabel('Velocidade angular (omega)')
+plt.title('Gráfico de Fase do Pêndulo')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plotando os resultados
+plt.figure(figsize=(10, 6))
+plt.plot(t_lista, theta_lista, label='Ângulo (theta)')
+plt.plot(t_lista, omega_lista, label='Velocidade angular (omega)')
+plt.plot(t_lista, x_lista, label='Deformação da mola (x)')
+plt.xlabel('Tempo (s)')
+plt.ylabel('Valor')
+plt.title('Simulação do Pêndulo Simples Elástico')
+plt.legend()
+plt.grid(True)
+plt.show()
